@@ -1,0 +1,19 @@
+from transformers import AutoTokenizer
+
+class Tokenizer:
+    def __init__(self, path, return_tensors="pt", return_attention_mask=False):
+        self.tokenizer = AutoTokenizer.from_pretrained(path)
+        
+        self.return_tensors = (return_tensors 
+                               if return_tensors in ["pt", "np", "tf"]
+                               else None)
+        
+        self.attention_mask = return_attention_mask
+        
+    def __call__(self, inputs):
+        result = self.tokenizer(inputs,
+                                return_tensors=self.return_tensors,
+                                return_attention_mask=self.attention_mask)
+        if len(result.keys()) == 1:
+            return result[list(result.keys())[0]]
+        return result
