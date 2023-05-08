@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 import os
 
 
+# The class below provides a pretrained tokenizer
 class Tokenizer:
     def __init__(self,
                  path,
@@ -45,6 +46,7 @@ class Tokenizer:
             )
 
 
+# The function below downloads/caches a dataset from huggingface
 def get_data(path: str,
              split: str,
              *args,
@@ -66,7 +68,7 @@ def get_data(path: str,
                         version=version,
                         **kwargs)
 
-
+# The class below provides a custom torch.utls.Dataset
 class DocumentSummaryDataset(Dataset):
     def __init__(self,
                  documents: list,
@@ -107,6 +109,8 @@ class DocumentSummaryDataset(Dataset):
         return (encoded_document[0][:self._doc_max_tokens],
                 encoded_summaries[0][:self._sum_max_tokens-1],
                 encoded_summaries[0][1:self._sum_max_tokens])
+
+# The function below provides a custom torch.utils.DataLoader
 
 
 def get_dataloader(
