@@ -13,8 +13,10 @@ from ..modules.embedding import EmbeddingBlock
 class LightConvModel(nn.Module):
     def __init__(self,
                  path="facebook/bart-large-cnn",
-                 path_to_embed="model.encoder.embed_tokens",
-                 path_to_learned_pos="model.encoder.embed_positions",
+                 path_to_enc_embed="model.encoder.embed_tokens",
+                 path_to_enc_learned_pos="model.encoder.embed_positions",
+                 path_to_dec_embed=None,
+                 path_to_dec_learned_pos=None,
                  n_heads: int = 8,
                  dropout: float = 0.3,
                  encoder_kernels: list = [3, 7, 15, 31, 31, 31, 31],
@@ -27,19 +29,19 @@ class LightConvModel(nn.Module):
 
         self.embedding = EmbeddingBlock(
             path=path,
-            path_to_embed=path_to_embed,
-            path_to_learned_pos=path_to_learned_pos
+            path_to_embed=path_to_enc_embed,
+            path_to_learned_pos=path_to_enc_learned_pos
         )
-        
-        d_model = self.embeddig.embedding_dim
+
+        d_model = self.embedding.embedding_dim
         dim_feedforward = d_model * 2
 
-        # self.dec_embeddig = TripleEmbeddingBlock(
-        #     num_word_embeddings=target_vocab_size,
-        #     num_type_embeddings=target_max_sentences,
-        #     embedding_dim=d_model,
-        #     padding_index=padding_index
-        # )
+        if path_to_dec_embed:
+            self.dec_embedding = EmbeddingBlock(
+                path=path,
+                path_to_embed=path_to_dec_embed,
+                path_to_learned_pos=path_to_dec_learned_pos
+            )
 
         if encoder_dilations:
             self.encoder = nn.Sequential(
@@ -82,7 +84,7 @@ class LightConvModel(nn.Module):
             )
 
         self.classifier = nn.Linear(in_features=d_model,
-                                    out_features=self.embeddig.num_embeddings)
+                                    out_features=self.embedding.num_embeddings)
 
     def forward(self,
                 source_tokens: torch.tensor,
@@ -90,8 +92,11 @@ class LightConvModel(nn.Module):
         enc_embeddings = self.embedding(source_tokens)
 
         enc_output = self.encoder(enc_embeddings)
-
-        output = self.embedding(target_tokens)
+        
+        if self.dec_embedding:
+            output = self.dec_embedding(target_tokens)
+        else:
+            output = self.embedding(target_tokens)
 
         for decoder in self.decoder:
             output = decoder(output,

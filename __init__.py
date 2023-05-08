@@ -1,1 +1,1 @@
-from utils import Tokenizer
+from .utils import Tokenizer
