@@ -14,7 +14,7 @@ class EmbeddingBlock(nn.Module):
         self.embedding = self.attr_from_path(path_to_embed)
         
         self.positional_embedding = (self.attr_from_path(path_to_learned_pos)
-        if path_to_learned_pos else None)
+        if path_to_learned_pos else "const")
         
         self.num_embeddings = self.embedding.num_embeddings
         self.embedding_dim = self.embedding.embedding_dim
@@ -26,14 +26,14 @@ class EmbeddingBlock(nn.Module):
         
         word_embedding = self.embedding(x)
         
-        if self.positional_embedding:
-            pos_embed = self.positional_embedding(x)
-        else:
-            pos_embed = positional_encoding(token_length,
+        if isinstance(self.positional_embedding, nn.Module):
+            word_embedding += self.positional_embedding(x)
+        elif self.positional_embedding == "const":
+            word_embedding += positional_encoding(token_length,
                                             self.embedding_dim,
                                             word_embedding.device,
                                             word_embedding.dtype)
-        return word_embedding + pos_embed
+        return word_embedding
         
     def attr_from_path(self, path):
         whole_path = path.split(".")
